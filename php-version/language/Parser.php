@@ -24,7 +24,7 @@ class Parser
 
     protected function reset(array $tokens)
     {
-        $this->root = new RootNode();
+        $this->root   = new RootNode();
         $this->tokens = $tokens;
         $this->cursor = 0;
     }
@@ -52,9 +52,11 @@ class Parser
         if (false === $this->current()->is($types)) {
             throw new \RuntimeException(
                 sprintf(
-                    "Unexpected token %s, expected one of [%s]`",
+                    "Unexpected token %s, expected one of [%s] at line %d at pos %d`",
                     $this->current()->getType(),
-                    implode(', ', (array)$types)
+                    implode(', ', (array)$types),
+                    $this->current()->getLine(),
+                    $this->current()->getPosition()
                 )
             );
         }
@@ -63,6 +65,7 @@ class Parser
 
     /**
      * @param int $i
+     *
      * @return Token
      */
     protected function lookahead($i = 1)
@@ -112,11 +115,7 @@ class Parser
 
     protected function parseExpressionStatement()
     {
-        $expr = $this->parseExpression();
-
-        $this->next();
-
-        return new \AST\ExpressionStatement($expr);
+        return new \AST\ExpressionStatement($this->parseExpression());
     }
 
     protected function parseIdentifier()
@@ -133,61 +132,95 @@ class Parser
     {
         $this->assertToken(Token::TYPE_NUMBER);
 
-        $text = $this->current()->getValue();
+        $text  = $this->current()->getValue();
         $value = (int)($text);
         $this->next();
 
         return new \AST\LiteralExpression($text, $value);
     }
 
+
     protected function parseExpression()
     {
-        if ($this->current()->is(Token::TYPE_NUMBER)) {
+        $unary = $this->parseUnaryExpression();
 
-            $expression = $this->parseLiteral();
-        } else {
-            $expression = $this->parseIdentifier();
+        return $this->parseBinaryExpression($unary, -1);
+    }
 
-        }
+    protected function parseUnaryExpression()
+    {
+        $result = $this->parseAtomicExpression();
 
-        if ($this->current()) {
-            switch ($this->current()->getType()) {
-                case Token::TYPE_PLUS:
-                case Token::TYPE_MINUS:
-                case Token::TYPE_MULTIPLY:
-                case Token::TYPE_DIVISION:
-                    return $this->parseBinaryExpression($expression);
-                case Token::TYPE_OPEN_PAREN:
-                    return $this->parseCallExpression($expression);
+        while (true) {
+            if ($this->current()->is(Token::TYPE_OPEN_PARENTHESIS)) {
+                $this->next();
+                $callee    = $result;
+                $arguments = $this->parseCallExpressionArguments();
+                $result    = new AST\CallExpression($callee, $arguments);
+                $this->assertToken(Token::TYPE_CLOSE_PARENTHESIS);
+                $this->next();
+            } else {
+                break;
             }
         }
 
-        return $expression;
+        return $result;
     }
 
-    protected function parseBinaryExpression($left)
+    protected function parseAtomicExpression()
     {
         $this->assertToken([
-            Token::TYPE_PLUS,
-            Token::TYPE_MINUS,
-            Token::TYPE_MULTIPLY,
-            Token::TYPE_DIVISION,
+            Token::TYPE_IDENTIFIER,
+            Token::TYPE_NUMBER,
+            Token::TYPE_OPEN_PARENTHESIS,
         ]);
 
-        $operation = $this->current()->getValue();
+        if ($this->current()->is(Token::TYPE_IDENTIFIER)) {
+            return $this->parseIdentifier();
+        } else {
+            if ($this->current()->is(Token::TYPE_OPEN_PARENTHESIS)) {
+                return $this->parseParentheses();
+            }
+        }
 
+        return $this->parseLiteral();
+    }
+
+    protected function parseParentheses()
+    {
+        $this->assertToken(Token::TYPE_OPEN_PARENTHESIS);
+        $this->next();
+        $expression = $this->parseExpression();
+        $this->assertToken(Token::TYPE_CLOSE_PARENTHESIS);
         $this->next();
 
-        $right = $this->parseExpression();
-
-        return new \AST\BinaryExpression($left, $operation, $right);
+        return new \AST\ParenthesesExpression($expression);
     }
+
+    protected function parseBinaryExpression($left, $minPrecedence)
+    {
+        $precedence = $this->current()->getPrecedence();
+
+        if ($precedence !== null && $precedence > $minPrecedence) {
+            $operation = $this->current()->getValue();
+            $this->next();
+            $right = $this->parseBinaryExpression($u = $this->parseUnaryExpression(), $precedence);
+
+            return $this->parseBinaryExpression(
+                new \AST\BinaryExpression($left, $operation, $right),
+                $minPrecedence
+            );
+        }
+
+        return $left;
+    }
+
 
     protected function parseCallExpression($callee)
     {
         $arguments = [];
 
-        $this->assertToken(Token::TYPE_OPEN_PAREN);
+        $this->assertToken(Token::TYPE_OPEN_PARENTHESIS);
         $this->next();
 
         while (true) {
@@ -199,11 +232,25 @@ class Parser
             }
         }
 
-        $this->assertToken(Token::TYPE_CLOSE_PAREN);
+        $this->assertToken(Token::TYPE_CLOSE_PARENTHESIS);
         $this->next();
 
         return new \AST\CallExpression($callee, $arguments);
     }
 
+    protected function parseCallExpressionArguments()
+    {
+        $arguments = [];
+
+        while (!$this->current()->is(Token::TYPE_CLOSE_PARENTHESIS)) {
+            $arguments[] = $this->parseExpression();
+            $this->assertToken([Token::TYPE_COMMA, Token::TYPE_CLOSE_PARENTHESIS]);
+            if ($this->current()->is(Token::TYPE_COMMA)) {
+                $this->next();
+            }
+        }
+
+        return $arguments;
+    }
 
 }

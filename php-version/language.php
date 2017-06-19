@@ -9,6 +9,7 @@ require_once __DIR__.'/language/AST/CallExpression.php';
 require_once __DIR__.'/language/AST/ExpressionStatement.php';
 require_once __DIR__.'/language/AST/IdentifierExpression.php';
 require_once __DIR__.'/language/AST/LiteralExpression.php';
+require_once __DIR__.'/language/AST/ParenthesesExpression.php';
 require_once __DIR__.'/language/AST/RootNode.php';
 require_once __DIR__.'/language/Compiler.php';
 require_once __DIR__.'/language/Interpreter.php';
@@ -33,7 +34,7 @@ $tokens = $lexer->tokenize($sourceCode);
 echo htmlspecialchars($lexer);
 echo '</pre><hr><pre>';
 $ast = $parser->parse($tokens);
-var_dump($ast);
+var_export($ast);
 echo '</pre>';
 
 //$app = $compiler->compile($ast);

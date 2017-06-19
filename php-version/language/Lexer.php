@@ -13,8 +13,8 @@ class Lexer
         '-' => Token::TYPE_MINUS,
         '/' => Token::TYPE_DIVISION,
         '*' => Token::TYPE_MULTIPLY,
-        '(' => Token::TYPE_OPEN_PAREN,
-        ')' => Token::TYPE_CLOSE_PAREN,
+        '(' => Token::TYPE_OPEN_PARENTHESIS,
+        ')' => Token::TYPE_CLOSE_PARENTHESIS,
         '{' => Token::TYPE_CURLY_OPEN,
         '}' => Token::TYPE_CURLY_CLOSE,
         '.' => Token::TYPE_DOT,
@@ -22,6 +22,7 @@ class Lexer
         '=' => Token::TYPE_EQUALS,
         'let' => Token::TYPE_LET,
         'var' => Token::TYPE_VAR,
+        'instanceof' => Token::TYPE_INSTANCEOF,
     ];
 
     public function tokenize(string $sourceCode): array
