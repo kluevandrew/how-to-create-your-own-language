@@ -23,6 +23,7 @@ class Lexer
         'let' => Token::TYPE_LET,
         'var' => Token::TYPE_VAR,
         'instanceof' => Token::TYPE_INSTANCEOF,
+        '^' => Token::TYPE_CARET,
     ];
 
     public function tokenize(string $sourceCode): array

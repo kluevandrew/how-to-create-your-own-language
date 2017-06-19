@@ -1,2 +1,5 @@
-print(1 * 2 + 3)
+let a = 2
+let b = 2
+
+print((a + b) ^ 2)
 

@@ -9,10 +9,19 @@
 namespace AST;
 
 
+/**
+ * Class AST\AssignStatement
+ */
 class AssignStatement extends StatementNode
 {
+    /**
+     * @var IdentifierExpression
+     */
     protected $name;
 
+    /**
+     * @var ExpressionNode
+     */
     protected $value;
 
     /**
@@ -20,14 +29,14 @@ class AssignStatement extends StatementNode
      * @param $name
      * @param $value
      */
-    public function __construct($name, $value)
+    public function __construct(IdentifierExpression $name, ExpressionNode $value)
     {
         $this->name = $name;
         $this->value = $value;
     }
 
     /**
-     * @return mixed
+     * @return IdentifierExpression
      */
     public function getName()
     {
@@ -35,13 +44,16 @@ class AssignStatement extends StatementNode
     }
 
     /**
-     * @return mixed
+     * @return ExpressionNode
      */
     public function getValue()
     {
         return $this->value;
     }
 
+    /**
+     * @return string
+     */
     public function __toString()
     {
         return $this->toString([$this->name, $this->value]);

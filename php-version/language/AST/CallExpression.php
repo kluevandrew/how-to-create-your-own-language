@@ -11,23 +11,26 @@ namespace AST;
 
 class CallExpression extends ExpressionNode
 {
+    /**
+     * @var ExpressionNode
+     */
     protected $callee;
 
     protected $arguments = [];
 
     /**
      * CallExpression constructor.
-     * @param $callee
+     * @param ExpressionNode $callee
      * @param array $arguments
      */
-    public function __construct($callee, array $arguments)
+    public function __construct(ExpressionNode $callee, array $arguments)
     {
         $this->callee = $callee;
         $this->arguments = $arguments;
     }
 
     /**
-     * @return mixed
+     * @return ExpressionNode
      */
     public function getCallee()
     {

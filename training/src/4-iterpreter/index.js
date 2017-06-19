@@ -28,7 +28,6 @@ class Scope {
 
   set(key, value) {
     if (this.has(key)) {
-      console.log(this)
       throw new Error(`Identifier '"${key}"' has already been declared`);
     }
 

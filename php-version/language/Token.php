@@ -19,6 +19,7 @@ class Token
     const TYPE_EQUALS = 'T_EQUALS';
     const TYPE_EOF = 'T_EOF';
     const TYPE_INSTANCEOF = 'T_INSTANCE_OF';
+    const TYPE_CARET = 'T_CARET';
 
     protected $type;
 
@@ -95,6 +96,8 @@ class Token
             case self::TYPE_MULTIPLY:
             case self::TYPE_DIVISION:
                 return 30;
+            case self::TYPE_CARET:
+                return 40;
             default:
                 return null;
         }
