@@ -5,14 +5,14 @@ class Lexer
     protected $cursor = -1;
     protected $currentLine = 1;
     protected $currentLinePosition = 0;
-    protected $sourceCode = '';
-    protected $tokens = [];
-
     protected static $lexemes = [
         '+' => Token::TYPE_PLUS,
+        '++' => Token::TYPE_DOUBLE_PLUS,
         '-' => Token::TYPE_MINUS,
-        '/' => Token::TYPE_DIVISION,
-        '*' => Token::TYPE_MULTIPLY,
+        '--' => Token::TYPE_DOUBLE_MINUS,
+        '/' => Token::TYPE_SLASH,
+        '*' => Token::TYPE_STAR,
+        '**' => Token::TYPE_DOUBLE_STAR,
         '(' => Token::TYPE_OPEN_PARENTHESIS,
         ')' => Token::TYPE_CLOSE_PARENTHESIS,
         '{' => Token::TYPE_CURLY_OPEN,
@@ -20,11 +20,27 @@ class Lexer
         '.' => Token::TYPE_DOT,
         ',' => Token::TYPE_COMMA,
         '=' => Token::TYPE_EQUALS,
+        '==' => Token::TYPE_DOUBLE_EQUALS,
+        '===' => Token::TYPE_TRIPLE_EQUALS,
+        '^' => Token::TYPE_CARET,
+        '^^' => Token::TYPE_DOUBLE_CARET,
+        '->' => Token::TYPE_ARROW_RIGHT,
+        '<-' => Token::TYPE_ARROW_LEFT,
+        '<' => Token::TYPE_LT,
+        '<=' => Token::TYPE_LTE,
+        '>=' => Token::TYPE_GTE,
+        '>' => Token::TYPE_GT,
+        '<=>' => Token::TYPE_UFO,
+    ];
+    protected $sourceCode = '';
+
+    protected static $keywords = [
         'let' => Token::TYPE_LET,
         'var' => Token::TYPE_VAR,
         'instanceof' => Token::TYPE_INSTANCEOF,
-        '^' => Token::TYPE_CARET,
     ];
+
+    protected $tokens = [];
 
     public function tokenize(string $sourceCode): array
     {
@@ -48,6 +64,21 @@ class Lexer
 
             if ($this->isText($char)) {
                 $this->while([$this, 'isText'], Token::TYPE_IDENTIFIER);
+                continue;
+            }
+
+            $trio = $char . $this->lookahead(1) . $this->lookahead(2);
+            if (array_key_exists($trio, self::$lexemes)) {
+                $this->token(self::$lexemes[$trio], $trio);
+                $this->next();
+                $this->next();
+                continue;
+            }
+
+            $pair = $char . $this->lookahead();
+            if (array_key_exists($pair, self::$lexemes)) {
+                $this->token(self::$lexemes[$pair], $pair);
+                $this->next();
                 continue;
             }
 
@@ -77,8 +108,8 @@ class Lexer
             }
         }
 
-        if (array_key_exists($value, self::$lexemes)) {
-            $tokenType = self::$lexemes[$value];
+        if (array_key_exists($value, self::$keywords)) {
+            $tokenType = self::$keywords[$value];
         }
 
         $this->token($tokenType, $value);
@@ -121,6 +152,11 @@ class Lexer
     protected function current()
     {
         return $this->sourceCode[$this->cursor] ?? null;
+    }
+
+    protected function lookahead($ahead = 1)
+    {
+        return $this->sourceCode[$this->cursor + $ahead] ?? null;
     }
 
     protected function reset()
