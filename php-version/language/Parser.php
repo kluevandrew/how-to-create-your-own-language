@@ -24,7 +24,7 @@ class Parser
 
     protected function reset(array $tokens)
     {
-        $this->root   = new RootNode();
+        $this->root = new RootNode();
         $this->tokens = $tokens;
         $this->cursor = 0;
     }
@@ -89,13 +89,25 @@ class Parser
     protected function parseStatement()
     {
         if ($this->current()->is([Token::TYPE_LET, Token::TYPE_VAR])) {
-            return $this->parseVariableDeclaration();
+            return $this->parseAssignStatement();
+        }
+
+        if ($this->current()->is(Token::TYPE_IF)) {
+            return $this->parseIfStatement();
+        }
+
+        if ($this->current()->is(Token::TYPE_FOR)) {
+            return $this->parseForStatement();
+        }
+
+        if ($this->current()->is(Token::TYPE_WHILE)) {
+            return $this->parseWhileStatement();
         }
 
         return $this->parseExpressionStatement();
     }
 
-    protected function parseVariableDeclaration()
+    protected function parseAssignStatement()
     {
         $this->assertToken([Token::TYPE_LET, Token::TYPE_VAR]);
         $this->next();
@@ -109,8 +121,84 @@ class Parser
             $initial = new \AST\LiteralExpression(0, 0);
         }
 
-
         return new \AST\AssignStatement($name, $initial);
+    }
+
+    protected function parseIfStatement()
+    {
+        $this->assertToken([Token::TYPE_IF, Token::TYPE_ELSE_IF, Token::TYPE_ELSE]);
+
+        $expression = null;
+        if (!$this->current()->is(Token::TYPE_ELSE)) {
+            $this->next();
+            $expression = $this->parseParentheses();
+        } else {
+            $this->next();
+        }
+
+        $this->assertAndNext(Token::TYPE_CURLY_OPEN);
+
+        $statements = [];
+        while ($this->current() && !$this->current()->is(Token::TYPE_CURLY_CLOSE)) {
+            $statements[] = $this->parseStatement();
+        }
+
+        $this->assertAndNext(Token::TYPE_CURLY_CLOSE);
+
+        $else = null;
+        if ($this->current()->is([Token::TYPE_ELSE, Token::TYPE_ELSE_IF])) {
+            $else = $this->parseIfStatement();
+        }
+
+        return new \AST\IfStatement($statements, $expression, $else);
+    }
+
+    protected function parseForStatement()
+    {
+        $this->assertAndNext(Token::TYPE_FOR);
+        $this->assertAndNext(Token::TYPE_OPEN_PARENTHESIS);
+
+        $this->assertAndNext([Token::TYPE_LET, Token::TYPE_VAR]);
+        $identifier = $this->parseIdentifier();
+        $this->assertAndNext(Token::TYPE_EQUALS);
+        $initial = new \AST\AssignStatement($identifier, $this->parseExpression());
+        $this->assertAndNext(Token::TYPE_SEMICOLON);
+
+        $step= new \AST\ExpressionStatement($this->parseExpression());
+        $this->assertAndNext(Token::TYPE_SEMICOLON);
+
+        $condition = new \AST\ExpressionStatement($this->parseExpression());
+        $this->skipIf(Token::TYPE_SEMICOLON);
+
+        $this->assertAndNext(Token::TYPE_CLOSE_PARENTHESIS);
+
+        $this->assertAndNext(Token::TYPE_CURLY_OPEN);
+        $statements = [];
+        while ($this->current() && !$this->current()->is(Token::TYPE_CURLY_CLOSE)) {
+            $statements[] = $this->parseStatement();
+        }
+        $this->assertAndNext(Token::TYPE_CURLY_CLOSE);
+
+        return new \AST\ForStatement($initial, $step, $condition, $statements);
+    }
+
+    protected function parseWhileStatement()
+    {
+        $this->assertAndNext(Token::TYPE_WHILE);
+
+        $this->assertAndNext(Token::TYPE_OPEN_PARENTHESIS);
+        $condition = $this->parseExpression();
+        $this->skipIf(Token::TYPE_SEMICOLON);
+        $this->assertAndNext(Token::TYPE_CLOSE_PARENTHESIS);
+
+        $this->assertAndNext(Token::TYPE_CURLY_OPEN);
+        $statements = [];
+        while ($this->current() && !$this->current()->is(Token::TYPE_CURLY_CLOSE)) {
+            $statements[] = $this->parseStatement();
+        }
+        $this->assertAndNext(Token::TYPE_CURLY_CLOSE);
+
+        return new \AST\WhileStatement($condition, $statements);
     }
 
     protected function parseExpressionStatement()
@@ -132,7 +220,7 @@ class Parser
     {
         $this->assertToken(Token::TYPE_NUMBER);
 
-        $text  = $this->current()->getValue();
+        $text = $this->current()->getValue();
         $value = (int)($text);
         $this->next();
 
@@ -154,9 +242,9 @@ class Parser
         while (true) {
             if ($this->current()->is(Token::TYPE_OPEN_PARENTHESIS)) {
                 $this->next();
-                $callee    = $result;
+                $callee = $result;
                 $arguments = $this->parseCallExpressionArguments();
-                $result    = new AST\CallExpression($callee, $arguments);
+                $result = new AST\CallExpression($callee, $arguments);
                 $this->assertToken(Token::TYPE_CLOSE_PARENTHESIS);
                 $this->next();
             } else {
@@ -173,17 +261,50 @@ class Parser
             Token::TYPE_IDENTIFIER,
             Token::TYPE_NUMBER,
             Token::TYPE_OPEN_PARENTHESIS,
+            Token::TYPE_QUOTE,
+            Token::TYPE_DOUBLE_QUOTE,
+            Token::TYPE_APOSTROPHE,
+            Token::TYPE_EQUALS,
         ]);
 
-        if ($this->current()->is(Token::TYPE_IDENTIFIER)) {
-            return $this->parseIdentifier();
-        } else {
-            if ($this->current()->is(Token::TYPE_OPEN_PARENTHESIS)) {
-                return $this->parseParentheses();
+        if ($this->current()->is([Token::TYPE_QUOTE, Token::TYPE_DOUBLE_QUOTE, Token::TYPE_APOSTROPHE])) {
+            return $this->parseStringExpression();
+        } elseif ($this->current()->is(Token::TYPE_IDENTIFIER)) {
+            if ($this->lookahead()->is(Token::TYPE_EQUALS)) {
+                return $this->parseAssignExpression();
             }
+            return $this->parseIdentifier();
+        } elseif ($this->current()->is(Token::TYPE_OPEN_PARENTHESIS)) {
+            return $this->parseParentheses();
         }
 
         return $this->parseLiteral();
+    }
+
+    protected function parseStringExpression()
+    {
+        $this->assertToken([Token::TYPE_QUOTE, Token::TYPE_DOUBLE_QUOTE, Token::TYPE_APOSTROPHE]);
+
+        $quote = $this->current();
+        $this->next();
+        $this->assertToken(Token::TYPE_TEXT);
+
+        $value = $this->current()->getValue();
+        if ($quote->is(Token::TYPE_DOUBLE_QUOTE)) {
+            // todo remove this dirty hack
+            $value = str_replace(
+                ['\r', '\n', '\t'],
+                ["\r", "\n", "\t"],
+                $value
+            );
+        }
+        $node = new AST\StringExpression($value, $quote->getValue());
+
+        $this->next();
+        $this->assertToken($quote->getType());
+        $this->next();
+
+        return $node;
     }
 
     protected function parseParentheses()
@@ -195,6 +316,17 @@ class Parser
         $this->next();
 
         return new \AST\ParenthesesExpression($expression);
+    }
+
+    protected function parseAssignExpression()
+    {
+        $this->assertToken(Token::TYPE_IDENTIFIER);
+        $name = $this->parseIdentifier();
+        $this->assertToken(Token::TYPE_EQUALS);
+        $this->next();
+        $expression = $this->parseExpression();
+
+        return new \AST\AssignExpression($name, $expression);
     }
 
     protected function parseBinaryExpression($left, $minPrecedence)
@@ -251,6 +383,19 @@ class Parser
         }
 
         return $arguments;
+    }
+
+    protected function assertAndNext($types)
+    {
+        $this->assertToken($types);
+        $this->next();
+    }
+
+    protected function skipIf($types)
+    {
+        if ($this->current()->is($types)) {
+            $this->next();
+        }
     }
 
 }

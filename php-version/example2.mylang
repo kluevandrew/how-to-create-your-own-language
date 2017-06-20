@@ -1,0 +1,9 @@
+for (let i = 0; i = i + 1; i < 10) {
+   print("For cycle index is %s\n", i)
+}
+
+let j = 0
+while (j < 10) {
+   print("While cycle index is %s\n", j)
+   j = j + 1
+}

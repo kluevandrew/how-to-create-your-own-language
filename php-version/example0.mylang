@@ -1,0 +1,7 @@
+let a = random(1, 10)
+let b = random(1, 10)
+let sum = a + b;
+
+print("a is %s\n", a)
+print("b is %s\n", b)
+print("sum of ab is %s", sum)

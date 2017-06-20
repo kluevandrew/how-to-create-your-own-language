@@ -36,6 +36,23 @@ class Token
     const TYPE_GTE = 'T_GTE';
     const TYPE_GT = 'T_GT';
     const TYPE_UFO = 'T_UFO';
+    const TYPE_IF = 'T_IF';
+    const TYPE_ELSE = 'T_ELSE';
+    const TYPE_ELSE_IF = 'T_ELSE_IF';
+    const TYPE_TEXT = 'T_TEXT';
+    const TYPE_QUOTE = 'T_QUOTE';
+    const TYPE_DOUBLE_QUOTE = 'T_DOUBLE_QUOTE';
+    const TYPE_APOSTROPHE = 'T_APOSTROPHE';
+    const TYPE_AMPERSAND = 'T_AMPERSAND';
+    const TYPE_DOUBLE_AMPERSAND = 'T_DOUBLE_AMPERSAND';
+    const TYPE_BAR = 'T_BAR';
+    const TYPE_DOUBLE_BAR = 'T_DOUBLE_BAR';
+    const TYPE_AND = 'T_AND';
+    const TYPE_OR = 'T_OR';
+    const TYPE_FOR = 'T_FOR';
+    const TYPE_COLON = 'T_COLON';
+    const TYPE_SEMICOLON = 'T_SEMICOLON';
+    const TYPE_WHILE = 'T_WHILE';
 
     protected $type;
 
@@ -105,8 +122,16 @@ class Token
     public function getPrecedence()
     {
         switch ($this->type) {
-            case self::TYPE_INSTANCEOF:
+            case self::TYPE_DOUBLE_BAR:
+            case self::TYPE_OR:
+            case self::TYPE_DOUBLE_AMPERSAND:
+            case self::TYPE_AND:
                 return 0;
+            case self::TYPE_GT:
+            case self::TYPE_GTE:
+            case self::TYPE_LT:
+            case self::TYPE_LTE:
+                return 10;
             case self::TYPE_PLUS:
             case self::TYPE_MINUS:
                 return 20;

@@ -1,0 +1,20 @@
+let a = random(1, 10)
+let b = random(1, 10)
+let c = random(1, 10)
+
+print("variable with name a is %d\n", a)
+print("variable with name b is %d\n", b)
+print("variable with name c is %d\n", c)
+
+if (a > b and a > c) {
+   print('variable with name a is biggest')
+   print("\n")
+} elseif (b > c && b > a) {
+   print('variable with name b is biggest')
+   print("\n")
+} else {
+   print('variable with name c is biggest')
+   print("\n")
+}
+
+print("good bay\n")

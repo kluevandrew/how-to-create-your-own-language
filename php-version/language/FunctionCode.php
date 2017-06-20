@@ -90,7 +90,7 @@ class FunctionCode
     /**
      * @param $index
      *
-     * @return \Interpreter\XValue|null
+     * @return \Interpreter\null
      */
     public function getLocalByIndex($index)
     {
@@ -106,4 +106,21 @@ class FunctionCode
     {
         return $this->names[$index];
     }
+
+
+    public function fake($name) {
+
+        $fake = new self($name, []);
+        $fake->locals = &$this->locals;
+        $fake->names = &$this->names;
+        $fake->constants = &$this->constants;
+
+        return $fake;
+    }
+
+    public function merge(self $function)
+    {
+        $this->opcodes = array_merge($this->opcodes, $function->opcodes);
+    }
+
 }

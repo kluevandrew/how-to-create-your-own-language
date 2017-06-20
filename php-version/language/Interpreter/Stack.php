@@ -23,4 +23,9 @@ class Stack
         return array_pop($this->stack);
     }
 
+    public function print()
+    {
+        echo '[' . implode(', ', $this->stack) . ']';
+    }
+
 }

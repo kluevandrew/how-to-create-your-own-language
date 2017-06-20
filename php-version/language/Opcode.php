@@ -12,8 +12,18 @@ class Opcode
     const BINARY_DIVIDE = 'BINARY_DIVIDE';
     const BINARY_POW = 'BINARY_POW';
     const BINARY_INSTANCE_OF = 'BINARY_INSTANCE_OF';
+    const BOOLEAN_AND = 'BOOLEAN_AND';
+    const BOOLEAN_OR = 'BOOLEAN_OR';
     const CALL_FUNCTION = 'CALL_FUNCTION';
     const LOAD_GLOBAL = 'LOAD_GLOBAL';
+    const JUMP_IF_FALSE = 'JUMP_IF_FALSE';
+    const COMPARE_GT = 'COMPARE_GT';
+    const COMPARE_GTE = 'COMPARE_GTE';
+    const COMPARE_LT = 'COMPARE_LT';
+    const COMPARE_LTE = 'COMPARE_LTE';
+    const JUMP = 'JUMP';
+    const PUT_FAST = 'PUT_FAST';
+    const JUMP_BACK = 'JUMP_BACK';
 
     protected $type;
 

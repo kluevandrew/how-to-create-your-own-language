@@ -13,18 +13,29 @@ class Interpreter
     protected $cursor = 0;
 
     protected static $evaluators = [
-        'LOAD_CONST'         => 'evalLoadConst',
-        'STORE_FAST'         => 'evalStoreFast',
-        'LOAD_FAST'          => 'evalLoadFast',
-        'BINARY_ADD'         => 'evalBinaryAdd',
-        'BINARY_MINUS'       => 'evalBinaryMinus',
-        'BINARY_MULTIPLY'    => 'evalBinaryMultiply',
-        'BINARY_DIVIDE'      => 'evalBinaryDivide',
-        'BINARY_INSTANCE_OF' => 'evalBinaryInstanceOf',
-        'BINARY_POW'         => 'evalBinaryPow',
-        'CALL_FUNCTION'      => 'evalCallFunction',
-        'LOAD_GLOBAL'        => 'evalLoadGlobal',
+        Opcode::LOAD_CONST => 'evalLoadConst',
+        Opcode::STORE_FAST => 'evalStoreFast',
+        Opcode::PUT_FAST => 'evalPutFast',
+        Opcode::LOAD_FAST => 'evalLoadFast',
+        Opcode::BINARY_ADD => 'evalBinaryAdd',
+        Opcode::BINARY_MINUS => 'evalBinaryMinus',
+        Opcode::BINARY_MULTIPLY => 'evalBinaryMultiply',
+        Opcode::BINARY_DIVIDE => 'evalBinaryDivide',
+        Opcode::BINARY_INSTANCE_OF => 'evalBinaryInstanceOf',
+        Opcode::BINARY_POW => 'evalBinaryPow',
+        Opcode::CALL_FUNCTION => 'evalCallFunction',
+        Opcode::LOAD_GLOBAL => 'evalLoadGlobal',
+        Opcode::COMPARE_GT => 'evalCompareGt',
+        Opcode::COMPARE_GTE => 'evalCompareGte',
+        Opcode::COMPARE_LT => 'evalCompareLt',
+        Opcode::COMPARE_LTE => 'evalCompareLte',
+        Opcode::JUMP_IF_FALSE => 'evalJumpIfFalse',
+        Opcode::JUMP => 'evalJump',
+        Opcode::JUMP_BACK => 'evalJumpBack',
+        Opcode::BOOLEAN_AND => 'evalBooleanAnd',
+        Opcode::BOOLEAN_OR => 'evalBooleanOr',
     ];
+
     /**
      * @var \Interpreter\Stack
      */
@@ -46,6 +57,9 @@ class Interpreter
             'print' => function (...$args) {
                 printf(...$args);
             },
+            'random' => function ($min, $max) {
+                return random_int($min, $max);
+            },
         ];
     }
 
@@ -53,8 +67,8 @@ class Interpreter
     {
         $this->reset();
         $this->function = $function;
-        $this->stack    = new \Interpreter\Stack();
-        $this->scope    = new \Interpreter\Scope();
+        $this->stack = new \Interpreter\Stack();
+        $this->scope = new \Interpreter\Scope();
         foreach ($this->std as $key => $value) {
             $this->scope->set($key, $value);
         }
@@ -101,6 +115,19 @@ class Interpreter
         $this->cursor++;
     }
 
+    protected function evalPutFast(Opcode $opcode)
+    {
+        $name = $this->function->getLocalByIndex($opcode->getValue());
+
+        if (!$this->scope->has($name)) {
+            throw new Error("Variable {$name} is never declared");
+        }
+
+        $value = $this->stack->pop();
+        $this->scope->set($name, $value);
+        $this->cursor++;
+    }
+
     protected function evalLoadFast(Opcode $opcode)
     {
         $name = $this->function->getLocalByIndex($opcode->getValue());
@@ -118,65 +145,93 @@ class Interpreter
 
     protected function evalBinaryAdd()
     {
-        $right = $this->stack->pop();
-        $left  = $this->stack->pop();
-
-        $value = $left + $right;
-        $this->stack->push($value);
-        $this->cursor++;
+        $this->math(function ($l, $r) {
+            return $l + $r;
+        });
     }
 
     protected function evalBinaryMinus()
     {
-        $right = $this->stack->pop();
-        $left  = $this->stack->pop();
-
-        $value = $left - $right;
-        $this->stack->push($value);
-        $this->cursor++;
+        $this->math(function ($l, $r) {
+            return $l - $r;
+        });
     }
 
     protected function evalBinaryMultiply()
     {
-        $right = $this->stack->pop();
-        $left  = $this->stack->pop();
-
-        $value = $left * $right;
-        $this->stack->push($value);
-        $this->cursor++;
+        $this->math(function ($l, $r) {
+            return $l * $r;
+        });
     }
 
     protected function evalBinaryDivide()
     {
-        $right = $this->stack->pop();
-        $left  = $this->stack->pop();
-
-        $value = $left / $right;
-        $this->stack->push($value);
-        $this->cursor++;
+        $this->math(function ($l, $r) {
+            return $l / $r;
+        });
     }
 
     protected function evalBinaryPow()
     {
-        $right = $this->stack->pop();
-        $left  = $this->stack->pop();
-
-        $value = pow($left, $right);
-        $this->stack->push($value);
-        $this->cursor++;
+        $this->math(function ($l, $r) {
+            return pow($l, $r);
+        });
     }
 
-    protected function evalBinaryInstanceOf()
+    protected function evalCompareGt()
+    {
+        $this->math(function ($l, $r) {
+            return $l > $r;
+        });
+    }
+
+    protected function evalCompareGte()
+    {
+        $this->math(function ($l, $r) {
+            return $l >= $r;
+        });
+    }
+
+    protected function evalCompareLt()
+    {
+        $this->math(function ($l, $r) {
+            return $l < $r;
+        });
+    }
+
+
+    protected function evalCompareLte()
+    {
+        $this->math(function ($l, $r) {
+            return $l <= $r;
+        });
+    }
+
+    protected function evalBooleanAnd()
+    {
+        $this->math(function ($l, $r) {
+            return $l && $r;
+        });
+    }
+
+    protected function evalBooleanOr()
+    {
+        $this->math(function ($l, $r) {
+            return $l || $r;
+        });
+    }
+
+    protected function math(callable $callback)
     {
         $right = $this->stack->pop();
-        $left  = $this->stack->pop();
+        $left = $this->stack->pop();
 
-        $c1    = $left;
-        $c2    = $right;
-        $value = $c1 instanceof $c2;
+        $value = $callback($left, $right);
+
         $this->stack->push($value);
         $this->cursor++;
     }
+
 
     protected function evalCallFunction(Opcode $opcode)
     {
@@ -185,8 +240,8 @@ class Interpreter
             $args[$i] = $this->stack->pop();
         }
 
-        $fn     = $this->stack->pop();
-        $result = $fn(...$args);
+        $fn = $this->stack->pop();
+        $result = $fn(...array_reverse($args));
 
         $this->stack->push($result);
         $this->cursor++;
@@ -204,6 +259,28 @@ class Interpreter
 
         $this->stack->push($value);
         $this->cursor++;
+    }
+
+    protected function evalJumpIfFalse(Opcode $opcode)
+    {
+        $value = $this->stack->pop();
+        $this->cursor++;
+
+        if ($value == false) {
+            $this->cursor += $opcode->getValue();
+        }
+
+    }
+
+    protected function evalJump(Opcode $opcode)
+    {
+        $this->cursor++;
+        $this->cursor += $opcode->getValue();
+    }
+
+    protected function evalJumpBack(Opcode $opcode)
+    {
+        $this->cursor -= $opcode->getValue();
     }
 
 }
