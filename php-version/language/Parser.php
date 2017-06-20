@@ -104,6 +104,14 @@ class Parser
             return $this->parseWhileStatement();
         }
 
+        if ($this->current()->is(Token::TYPE_FUNCTION)) {
+            return $this->parseFunctionStatement();
+        }
+
+        if ($this->current()->is(Token::TYPE_RETURN)) {
+            return $this->parserReturnStatement();
+        }
+
         return $this->parseExpressionStatement();
     }
 
@@ -199,6 +207,37 @@ class Parser
         $this->assertAndNext(Token::TYPE_CURLY_CLOSE);
 
         return new \AST\WhileStatement($condition, $statements);
+    }
+
+    protected function parseFunctionStatement()
+    {
+        $this->assertAndNext(Token::TYPE_FUNCTION);
+
+        $name = $this->parseIdentifier();
+
+        $this->assertAndNext(Token::TYPE_OPEN_PARENTHESIS);
+        $arguments = [];
+        while ($this->current()->is(Token::TYPE_IDENTIFIER)) {
+            $arguments[] = $this->parseIdentifier();
+            $this->skipIf(Token::TYPE_COMMA);
+        }
+        $this->assertAndNext(Token::TYPE_CLOSE_PARENTHESIS);
+
+        $this->assertAndNext(Token::TYPE_CURLY_OPEN);
+        $statements = [];
+        while ($this->current() && !$this->current()->is(Token::TYPE_CURLY_CLOSE)) {
+            $statements[] = $this->parseStatement();
+        }
+        $this->assertAndNext(Token::TYPE_CURLY_CLOSE);
+
+        return new \AST\FunctionStatement($name, $arguments, $statements);
+    }
+
+    protected function parserReturnStatement()
+    {
+        $this->assertAndNext(Token::TYPE_RETURN);
+
+        return new \AST\ReturnStatement($this->parseExpression());
     }
 
     protected function parseExpressionStatement()

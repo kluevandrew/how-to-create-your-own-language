@@ -53,6 +53,8 @@ class Token
     const TYPE_COLON = 'T_COLON';
     const TYPE_SEMICOLON = 'T_SEMICOLON';
     const TYPE_WHILE = 'T_WHILE';
+    const TYPE_FUNCTION = 'T_FUNCTION';
+    const TYPE_RETURN = 'T_RETURN';
 
     protected $type;
 

@@ -53,6 +53,8 @@ class Lexer
         'or' => Token::TYPE_OR,
         'for' => Token::TYPE_FOR,
         'while' => Token::TYPE_WHILE,
+        'function' => Token::TYPE_FUNCTION,
+        'return' => Token::TYPE_RETURN,
     ];
 
     protected $tokens = [];
@@ -225,7 +227,7 @@ class Lexer
 
     protected function isText($char)
     {
-        return preg_match('/[a-z]/ui', $char);
+        return preg_match('/[a-z_]/ui', $char);
     }
 
     public function __toString()

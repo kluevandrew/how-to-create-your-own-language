@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 'on');
+ini_set('max_execution_time', 2);
 
 require_once __DIR__.'/language/AST/Node.php';
 require_once __DIR__.'/language/AST/ExpressionNode.php';
@@ -17,10 +18,13 @@ require_once __DIR__.'/language/AST/ParenthesesExpression.php';
 require_once __DIR__.'/language/AST/AssignExpression.php';
 require_once __DIR__.'/language/AST/IfStatement.php';
 require_once __DIR__.'/language/AST/WhileStatement.php';
+require_once __DIR__.'/language/AST/FunctionStatement.php';
+require_once __DIR__.'/language/AST/ReturnStatement.php';
 require_once __DIR__.'/language/AST/RootNode.php';
 require_once __DIR__.'/language/Compiler.php';
 require_once __DIR__.'/language/Interpreter/Scope.php';
 require_once __DIR__.'/language/Interpreter/Stack.php';
+require_once __DIR__.'/language/Interpreter/UserFunctionValue.php';
 require_once __DIR__.'/language/Interpreter.php';
 require_once __DIR__.'/language/Lexer.php';
 require_once __DIR__.'/language/Parser.php';

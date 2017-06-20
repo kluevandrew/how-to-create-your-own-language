@@ -32,6 +32,8 @@ class Compiler
         \AST\AssignExpression::class => 'compileAssignExpression',
         \AST\ForStatement::class => 'compileForStatement',
         \AST\WhileStatement::class => 'compileWhileStatement',
+        \AST\FunctionStatement::class => 'compileFunctionStatement',
+        \AST\ReturnStatement::class => 'compileReturnStatement',
     ];
 
     public function compile(RootNode $ast): FunctionCode
@@ -53,7 +55,7 @@ class Compiler
     }
 
     /**
-     * @param $statements
+     * @param $nodes
      * @param $name
      * @return FunctionCode
      */
@@ -66,6 +68,30 @@ class Compiler
         }
 
         return $compiler->function;
+    }
+
+    /**
+     * @param FunctionCode $function
+     * @param $statements
+     * @return FunctionCode
+     */
+    protected function compileBody(FunctionCode $function, $statements)
+    {
+        $compiler = new self();
+        $compiler->function = $function;
+
+        foreach ($statements as $statement) {
+            $compiler->compileStatement($statement);
+        }
+
+        if ($function->getOpcodesCount() === 0 ||
+            $function->getOpcodeByIndex($function->getOpcodesCount() - 1)->getType() !== Opcode::RETURN_VALUE
+        ) {
+            $function->opcode(new Opcode(Opcode::LOAD_CONST, $function->constant(null)));
+            $function->opcode(new Opcode(Opcode::RETURN_VALUE));
+        }
+
+        return $function;
     }
 
     protected function compileNode(\AST\Node $node)
@@ -97,11 +123,11 @@ class Compiler
 
     protected function compileIfStatement(\AST\IfStatement $statement)
     {
-        $fakeFunctionIf = $this->compileFakeFunction($statement->getStatements(), '#'.get_class($statement).'#');
+        $fakeFunctionIf = $this->compileFakeFunction($statement->getStatements(), '#' . get_class($statement) . '#');
         $fakeFunctionElse = null;
 
         if ($statement->getElse()) {
-            $fakeFunctionElse = $this->compileFakeFunction([$statement->getElse()], '#'.get_class($statement).'#');
+            $fakeFunctionElse = $this->compileFakeFunction([$statement->getElse()], '#' . get_class($statement) . '#');
             $fakeFunctionIf->opcode(new Opcode(
                 Opcode::JUMP,
                 $fakeFunctionElse->getOpcodesCount()
@@ -134,7 +160,7 @@ class Compiler
         $bodyStatements[] = $statement->getCondition();
         $body = $this->compileFakeFunction(
             $bodyStatements,
-            '#'.get_class($statement).'#'
+            '#' . get_class($statement) . '#'
         );
         $body->opcode(
             new Opcode(
@@ -158,7 +184,7 @@ class Compiler
         $bodyStatements[] = $statement->getCondition();
         $body = $this->compileFakeFunction(
             $bodyStatements,
-            '#'.get_class($statement).'#'
+            '#' . get_class($statement) . '#'
         );
         $body->opcode(
             new Opcode(
@@ -287,6 +313,45 @@ class Compiler
         );
     }
 
+    protected function compileFunctionStatement(\AST\FunctionStatement $statement)
+    {
+        $argumentsNames = [];
+        foreach ($statement->getArguments() as $argument) {
+            $argumentsNames[] = $argument->getName();
+        }
+        $function = new FunctionCode($statement->getName()->getName(), $argumentsNames);
+        foreach ($statement->getArguments() as $argument) {
+            $function->local($argument->getName());
+        }
+
+        $this->compileBody($function, $statement->getStatements());
+
+        $this->function->opcode(new Opcode(
+            Opcode::LOAD_CONST,
+            $this->function->constant($function)
+        ));
+        $this->function->opcode(new Opcode(
+            Opcode::LOAD_CONST,
+            $this->function->constant($statement->getName()->getName())
+        ));
+        $this->function->opcode(new Opcode(
+            Opcode::MAKE_FUNCTION,
+            0
+        ));
+        $this->function->opcode(new Opcode(
+            Opcode::STORE_FAST,
+            $this->function->local($statement->getName()->getName())
+        ));
+    }
+
+    protected function compileReturnStatement(\AST\ReturnStatement $statement)
+    {
+        $this->compileExpression($statement->getExpression());
+        $this->function->opcode(new Opcode(
+            Opcode::RETURN_VALUE,
+            0
+        ));
+    }
 }
 
 

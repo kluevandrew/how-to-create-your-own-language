@@ -24,6 +24,8 @@ class Opcode
     const JUMP = 'JUMP';
     const PUT_FAST = 'PUT_FAST';
     const JUMP_BACK = 'JUMP_BACK';
+    const MAKE_FUNCTION = 'MAKE_FUNCTION';
+    const RETURN_VALUE = 'RETURN_VALUE';
 
     protected $type;
 

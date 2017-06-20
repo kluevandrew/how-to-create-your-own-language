@@ -94,17 +94,22 @@ class FunctionCode
      */
     public function getLocalByIndex($index)
     {
-        return $this->locals[$index];
+        return $this->locals[$index] ?? null;
     }
 
     public function getConstantByIndex($index)
     {
-        return $this->constants[$index];
+        return $this->constants[$index] ?? null;
     }
 
     public function getNameByIndex($index)
     {
         return $this->names[$index];
+    }
+
+    public function getArgumentByIndex($index)
+    {
+        return $this->arguments[$index];
     }
 
 

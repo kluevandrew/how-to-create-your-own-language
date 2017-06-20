@@ -34,6 +34,8 @@ class Interpreter
         Opcode::JUMP_BACK => 'evalJumpBack',
         Opcode::BOOLEAN_AND => 'evalBooleanAnd',
         Opcode::BOOLEAN_OR => 'evalBooleanOr',
+        Opcode::MAKE_FUNCTION => 'evalMakeFunction',
+        Opcode::RETURN_VALUE => 'noop',
     ];
 
     /**
@@ -47,34 +49,33 @@ class Interpreter
     protected $scope;
 
     protected $std = [];
+    protected $debug;
 
     /**
      * Interpreter constructor.
      */
     public function __construct()
     {
+        $this->stack = new \Interpreter\Stack();
+        $this->scope = new \Interpreter\Scope();
+
         $this->std = [
-            'print' => function (...$args) {
-                printf(...$args);
-            },
-            'random' => function ($min, $max) {
-                return random_int($min, $max);
-            },
+            'print' => 'printf',
+            'random' => 'random_int'
         ];
     }
 
-    public function run(FunctionCode $function): int
+    public function run(FunctionCode $function, $debug = false): int
     {
         $this->reset();
         $this->function = $function;
-        $this->stack = new \Interpreter\Stack();
-        $this->scope = new \Interpreter\Scope();
+        $this->debug = $debug;
+
         foreach ($this->std as $key => $value) {
             $this->scope->set($key, $value);
         }
 
         while ($opcode = $this->function->getOpcodeByIndex($this->cursor)) {
-
             $evaluator = self::$evaluators[$opcode->getType()] ?? null;
 
             if (!$evaluator) {
@@ -86,7 +87,8 @@ class Interpreter
             $this->{$evaluator}($opcode);
         }
 
-        return 0;
+        $last = $this->stack->pop();
+        return is_int($last) ? $last : 0;
     }
 
     protected function reset()
@@ -236,15 +238,34 @@ class Interpreter
     protected function evalCallFunction(Opcode $opcode)
     {
         $args = [];
-        for ($i = $opcode->getValue() - 1; $i >= 0; $i--) {
+        for ($i = 0; $i < $opcode->getValue(); $i++) {
             $args[$i] = $this->stack->pop();
         }
+        $args = array_reverse($args);
 
         $fn = $this->stack->pop();
-        $result = $fn(...array_reverse($args));
 
-        $this->stack->push($result);
+        if ($fn instanceof \Interpreter\UserFunction) {
+            $result = $this->evalUserFunctionCall($fn, $args);
+        } else {
+            $result = $fn(...$args);
+        }
+
         $this->cursor++;
+        $this->stack->push($result);
+    }
+
+    protected function evalUserFunctionCall(\Interpreter\UserFunction $function, array $arguments)
+    {
+        $interpreter = new self();
+        $interpreter->stack = $this->stack;
+        foreach ($arguments as $i => $argument) {
+            $interpreter->scope->set($function->getCode()->getArgumentByIndex($i), $argument);
+        }
+
+        $value = $interpreter->run($function->getCode(), true);
+
+        return $value;
     }
 
     protected function evalLoadGlobal(Opcode $opcode)
@@ -269,7 +290,6 @@ class Interpreter
         if ($value == false) {
             $this->cursor += $opcode->getValue();
         }
-
     }
 
     protected function evalJump(Opcode $opcode)
@@ -283,4 +303,15 @@ class Interpreter
         $this->cursor -= $opcode->getValue();
     }
 
+    protected function evalMakeFunction()
+    {
+        $name = $this->stack->pop();
+        $function = $this->stack->pop();
+        $this->stack->push(new \Interpreter\UserFunction($name, $function));
+        $this->cursor++;
+    }
+
+    public function noop() {
+        $this->cursor++;
+    }
 }

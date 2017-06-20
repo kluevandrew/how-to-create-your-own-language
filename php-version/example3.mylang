@@ -1,0 +1,8 @@
+function user_function(number) {
+    function nested_user_function(to_pow) {
+        return to_pow ^ 2
+    }
+    return nested_user_function(number / 2)
+}
+
+print(user_function(8))
