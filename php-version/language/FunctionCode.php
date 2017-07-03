@@ -18,6 +18,14 @@ class FunctionCode
         $this->arguments = $arguments;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
     public function opcode(Opcode $opcode)
     {
         $this->opcodes[] = $opcode;
@@ -112,6 +120,15 @@ class FunctionCode
         return $this->arguments[$index];
     }
 
+    public function getArgumentsCount()
+    {
+        return count($this->arguments);
+    }
+
+    public function getArguments()
+    {
+        return $this->arguments;
+    }
 
     public function fake($name) {
 

@@ -23,14 +23,18 @@ require_once __DIR__.'/language/AST/ReturnStatement.php';
 require_once __DIR__.'/language/AST/RootNode.php';
 require_once __DIR__.'/language/Compiler.php';
 require_once __DIR__.'/language/Interpreter/Scope.php';
+require_once __DIR__.'/language/Interpreter/StdLib.php';
 require_once __DIR__.'/language/Interpreter/Stack.php';
-require_once __DIR__.'/language/Interpreter/UserFunctionValue.php';
+require_once __DIR__.'/language/Interpreter/XValue.php';
+require_once __DIR__.'/language/Interpreter/NativeFunction.php';
+require_once __DIR__.'/language/Interpreter/UserFunction.php';
 require_once __DIR__.'/language/Interpreter.php';
 require_once __DIR__.'/language/Lexer.php';
 require_once __DIR__.'/language/Parser.php';
 require_once __DIR__.'/language/Token.php';
 require_once __DIR__.'/language/Opcode.php';
 require_once __DIR__.'/language/FunctionCode.php';
+require_once __DIR__.'/language/AST/TypeofExpression.php';
 
 if (isset($_GET)) {
     $file = $_GET['example'] ?? 0;

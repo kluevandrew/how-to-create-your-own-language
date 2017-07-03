@@ -23,6 +23,7 @@ class Compiler
         \AST\AssignStatement::class => 'compileAssignStatement',
         \AST\IfStatement::class => 'compileIfStatement',
         \AST\ExpressionStatement::class => 'compileExpressionStatement',
+        \AST\TypeofExpression::class => 'compileTypeofExpression',
         \AST\BinaryExpression::class => 'compileBinaryExpression',
         \AST\LiteralExpression::class => 'compileLiteralExpression',
         \AST\IdentifierExpression::class => 'compileIdentifierExpression',
@@ -208,6 +209,16 @@ class Compiler
     protected function compileExpression(\AST\ExpressionNode $expression)
     {
         $this->compileNode($expression);
+    }
+
+    protected function compileTypeofExpression(\AST\TypeofExpression $expression)
+    {
+        $this->compileExpression($expression->getExpression());
+
+        $this->function->opcode(new Opcode(
+            Opcode::TYPEOF,
+            0
+        ));
     }
 
     protected function compileBinaryExpression(\AST\BinaryExpression $expression)

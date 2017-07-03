@@ -304,10 +304,13 @@ class Parser
             Token::TYPE_DOUBLE_QUOTE,
             Token::TYPE_APOSTROPHE,
             Token::TYPE_EQUALS,
+            Token::TYPE_TYPEOF,
         ]);
 
         if ($this->current()->is([Token::TYPE_QUOTE, Token::TYPE_DOUBLE_QUOTE, Token::TYPE_APOSTROPHE])) {
             return $this->parseStringExpression();
+        } elseif ($this->current()->is(Token::TYPE_TYPEOF)) {
+            return $this->parseTypeofExpression();
         } elseif ($this->current()->is(Token::TYPE_IDENTIFIER)) {
             if ($this->lookahead()->is(Token::TYPE_EQUALS)) {
                 return $this->parseAssignExpression();
@@ -344,6 +347,16 @@ class Parser
         $this->next();
 
         return $node;
+    }
+
+    protected function parseTypeofExpression()
+    {
+        $this->assertToken(Token::TYPE_TYPEOF);
+        $name = $this->current()->getValue();
+        $this->next();
+        $expression = $this->parseUnaryExpression();
+
+        return new AST\TypeofExpression($name, $expression);
     }
 
     protected function parseParentheses()

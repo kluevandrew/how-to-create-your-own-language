@@ -55,6 +55,7 @@ class Lexer
         'while' => Token::TYPE_WHILE,
         'function' => Token::TYPE_FUNCTION,
         'return' => Token::TYPE_RETURN,
+        'typeof' => Token::TYPE_TYPEOF,
     ];
 
     protected $tokens = [];
@@ -83,6 +84,20 @@ class Lexer
                 $this->while([$this, 'isText'], Token::TYPE_IDENTIFIER);
                 continue;
             }
+
+            if ($char === '/') {
+                if ($this->lookahead(1) == '/') {
+                    $this->skip([$this, 'isNotEol']);
+                    continue;
+                }
+
+                if ($this->lookahead(1) == '*') {
+                    $this->skip([$this, 'isNotEndOfMultilineComment']);
+                    $this->next();
+                    continue;
+                }
+            }
+
 
             if ($this->isQuote($char)) {
                 $this->token(self::$lexemes[$char], $char);
@@ -141,6 +156,18 @@ class Lexer
         }
 
         $this->token($tokenType, $value);
+    }
+
+    protected function skip(callable $filter)
+    {
+        while (true) {
+            $char = $this->next();
+
+            if (!$filter($char)) {
+                $this->previous();
+                break;
+            }
+        }
     }
 
     protected function readInQuotes($compare, $tokenType)
@@ -213,6 +240,21 @@ class Lexer
     protected function isEol($char)
     {
         return $char === "\n";
+    }
+
+    protected function isNotEol($char)
+    {
+        return !$this->isEol($char);
+    }
+
+    protected function isEndOfMultilineComment($char)
+    {
+        return $char === '/' && $this->lookahead(-1) === '*';
+    }
+
+    protected function isNotEndOfMultilineComment($char)
+    {
+        return !$this->isEndOfMultilineComment($char);
     }
 
     protected function isWhitespace($char)

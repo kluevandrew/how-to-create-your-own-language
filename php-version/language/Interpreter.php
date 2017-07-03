@@ -35,6 +35,7 @@ class Interpreter
         Opcode::BOOLEAN_AND => 'evalBooleanAnd',
         Opcode::BOOLEAN_OR => 'evalBooleanOr',
         Opcode::MAKE_FUNCTION => 'evalMakeFunction',
+        Opcode::TYPEOF => 'evalTypeof',
         Opcode::RETURN_VALUE => 'noop',
     ];
 
@@ -53,27 +54,21 @@ class Interpreter
 
     /**
      * Interpreter constructor.
+     *
+     * @param \Interpreter\Stack|null $stack
+     * @param \Interpreter\Scope|null $scope
      */
-    public function __construct()
+    public function __construct(\Interpreter\Stack $stack = null, \Interpreter\Scope $scope = null)
     {
-        $this->stack = new \Interpreter\Stack();
-        $this->scope = new \Interpreter\Scope();
-
-        $this->std = [
-            'print' => 'printf',
-            'random' => 'random_int'
-        ];
+        $this->stack = $stack ?? new \Interpreter\Stack();
+        $this->scope = $scope ?? new \Interpreter\Scope(new \Interpreter\StdLib());
     }
 
-    public function run(FunctionCode $function, $debug = false): int
+    public function run(FunctionCode $function, $debug = false)
     {
         $this->reset();
         $this->function = $function;
         $this->debug = $debug;
-
-        foreach ($this->std as $key => $value) {
-            $this->scope->set($key, $value);
-        }
 
         while ($opcode = $this->function->getOpcodeByIndex($this->cursor)) {
             $evaluator = self::$evaluators[$opcode->getType()] ?? null;
@@ -88,7 +83,8 @@ class Interpreter
         }
 
         $last = $this->stack->pop();
-        return is_int($last) ? $last : 0;
+
+        return $last instanceof \Interpreter\XValue ? $last->getValue() : 0;
     }
 
     protected function reset()
@@ -100,7 +96,7 @@ class Interpreter
     {
         $value = $this->function->getConstantByIndex($opcode->getValue());
 
-        $this->stack->push($value);
+        $this->stack->push(new \Interpreter\XValue($value));
         $this->cursor++;
     }
 
@@ -138,9 +134,7 @@ class Interpreter
             throw new Error("Unknown variable {$name}");
         }
 
-        $this->stack->push(
-            $this->scope->get($name)
-        );
+        $this->stack->push($this->scope->get($name));
 
         $this->cursor++;
     }
@@ -148,57 +142,60 @@ class Interpreter
     protected function evalBinaryAdd()
     {
         $this->math(function ($l, $r) {
+            if (is_string($l) || is_string($r)) {
+                return $l . $r;
+            }
             return $l + $r;
-        });
+        }, __METHOD__);
     }
 
     protected function evalBinaryMinus()
     {
         $this->math(function ($l, $r) {
             return $l - $r;
-        });
+        }, __METHOD__);
     }
 
     protected function evalBinaryMultiply()
     {
         $this->math(function ($l, $r) {
             return $l * $r;
-        });
+        }, __METHOD__);
     }
 
     protected function evalBinaryDivide()
     {
         $this->math(function ($l, $r) {
             return $l / $r;
-        });
+        }, __METHOD__);
     }
 
     protected function evalBinaryPow()
     {
         $this->math(function ($l, $r) {
             return pow($l, $r);
-        });
+        }, __METHOD__);
     }
 
     protected function evalCompareGt()
     {
         $this->math(function ($l, $r) {
             return $l > $r;
-        });
+        }, __METHOD__);
     }
 
     protected function evalCompareGte()
     {
         $this->math(function ($l, $r) {
             return $l >= $r;
-        });
+        }, __METHOD__);
     }
 
     protected function evalCompareLt()
     {
         $this->math(function ($l, $r) {
             return $l < $r;
-        });
+        }, __METHOD__);
     }
 
 
@@ -206,34 +203,33 @@ class Interpreter
     {
         $this->math(function ($l, $r) {
             return $l <= $r;
-        });
+        }, __METHOD__);
     }
 
     protected function evalBooleanAnd()
     {
         $this->math(function ($l, $r) {
             return $l && $r;
-        });
+        }, __METHOD__);
     }
 
     protected function evalBooleanOr()
     {
         $this->math(function ($l, $r) {
             return $l || $r;
-        });
+        }, __METHOD__);
     }
 
-    protected function math(callable $callback)
+    protected function math(callable $callback, $method)
     {
-        $right = $this->stack->pop();
-        $left = $this->stack->pop();
+        $right = $this->stack->pop()->getValue();
+        $left = $this->stack->pop()->getValue();
 
         $value = $callback($left, $right);
 
-        $this->stack->push($value);
+        $this->stack->push(new \Interpreter\XValue($value));
         $this->cursor++;
     }
-
 
     protected function evalCallFunction(Opcode $opcode)
     {
@@ -247,25 +243,38 @@ class Interpreter
 
         if ($fn instanceof \Interpreter\UserFunction) {
             $result = $this->evalUserFunctionCall($fn, $args);
+        } elseif ($fn instanceof \Interpreter\NativeFunction) {
+            $result = $this->evalNativeFunctionCall($fn, $args);
         } else {
-            $result = $fn(...$args);
+            throw new \RuntimeException('Call on not a function');
         }
 
         $this->cursor++;
-        $this->stack->push($result);
+        $this->stack->push(new \Interpreter\XValue($result));
     }
 
     protected function evalUserFunctionCall(\Interpreter\UserFunction $function, array $arguments)
     {
-        $interpreter = new self();
-        $interpreter->stack = $this->stack;
-        foreach ($arguments as $i => $argument) {
-            $interpreter->scope->set($function->getCode()->getArgumentByIndex($i), $argument);
+        $interpreter = new self($this->stack, new \Interpreter\Scope($this->scope));
+        if (count($arguments) !== $function->getArgumentsCount()  && $function->getArgumentsCount() !== -1) {
+            echo "Notice: bad function call " . $function->getName() . PHP_EOL;
         }
 
-        $value = $interpreter->run($function->getCode(), true);
+        foreach ($function->getCode()->getArguments() as $i => $argumentName) {
+            $interpreter->scope->set($argumentName, $arguments[$i] ?? null);
+        }
 
-        return $value;
+        return $interpreter->run($function->getCode(), true);
+    }
+
+
+    protected function evalNativeFunctionCall(\Interpreter\NativeFunction $function, array $arguments)
+    {
+        if (count($arguments) !== $function->getArgumentsCount() && $function->getArgumentsCount() !== -1) {
+            echo "Notice: bad function call " . $function->getName() . PHP_EOL;
+        }
+
+        return $function->execute($arguments);
     }
 
     protected function evalLoadGlobal(Opcode $opcode)
@@ -277,14 +286,13 @@ class Interpreter
         }
 
         $value = $this->scope->get($name);
-
-        $this->stack->push($value);
+        $this->stack->push($value instanceof \Interpreter\XValue ? $value : new \Interpreter\XValue($value));
         $this->cursor++;
     }
 
     protected function evalJumpIfFalse(Opcode $opcode)
     {
-        $value = $this->stack->pop();
+        $value = $this->stack->pop()->getValue();
         $this->cursor++;
 
         if ($value == false) {
@@ -308,6 +316,13 @@ class Interpreter
         $name = $this->stack->pop();
         $function = $this->stack->pop();
         $this->stack->push(new \Interpreter\UserFunction($name, $function));
+        $this->cursor++;
+    }
+
+    protected function evalTypeof()
+    {
+        $value = $this->stack->pop();
+        $this->stack->push(new \Interpreter\XValue($value->getType()));
         $this->cursor++;
     }
 

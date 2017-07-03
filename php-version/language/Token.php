@@ -55,6 +55,7 @@ class Token
     const TYPE_WHILE = 'T_WHILE';
     const TYPE_FUNCTION = 'T_FUNCTION';
     const TYPE_RETURN = 'T_RETURN';
+    const TYPE_TYPEOF = 'T_TYPEOF';
 
     protected $type;
 

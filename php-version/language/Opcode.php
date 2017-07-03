@@ -26,6 +26,7 @@ class Opcode
     const JUMP_BACK = 'JUMP_BACK';
     const MAKE_FUNCTION = 'MAKE_FUNCTION';
     const RETURN_VALUE = 'RETURN_VALUE';
+    const TYPEOF = 'TYPEOF';
 
     protected $type;
 

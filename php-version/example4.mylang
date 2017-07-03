@@ -1,0 +1,26 @@
+function user_function(max) {
+    function cycle_while(max) {
+       let j = max
+       while (j >= 0) {
+          print("While cycle index is %s\n", j)
+          j = j - 1
+       }
+    }
+
+    function cycle_for(max) {
+      for (let i = 0; i = i + 1; i < max) {
+           print("For   cycle index is %s\n", i)
+        }
+    }
+
+    if (max >= 0 && max < 5) {
+        cycle_for(max)
+    } elseif (max >= 5 && max <= 10) {
+        cycle_while(max)
+    } else {
+        print("to large\n")
+    }
+
+}
+
+user_function(random(1, 12))

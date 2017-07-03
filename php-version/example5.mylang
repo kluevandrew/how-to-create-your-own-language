@@ -1,0 +1,14 @@
+function scope_inheritance(max) {
+    let x = 0
+
+    function printer() {
+        print(x)
+    }
+
+    printer()
+    x = random(1, max)
+    printer()
+}
+
+let maximum = 9
+scope_inheritance(maximum)

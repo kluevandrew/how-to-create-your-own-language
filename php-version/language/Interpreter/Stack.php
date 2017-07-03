@@ -12,13 +12,13 @@ class Stack
 
     protected $stack = [];
 
-    public function push($value): int
+    public function push(XValue $value): int
     {
         return array_push($this->stack, $value);
     }
 
 
-    public function pop()
+    public function pop(): XValue
     {
         return array_pop($this->stack);
     }

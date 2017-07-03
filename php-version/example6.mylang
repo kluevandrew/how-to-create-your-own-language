@@ -1,0 +1,16 @@
+let number = 1
+
+print(typeof number) // integer
+print("\n")
+
+print(typeof number + 2) // integer | integer2
+print("\n")
+
+print(typeof (number + 2)) // integer
+print("\n")
+
+/*
+let string = "hello"
+print(typeof string)
+print("\n")
+*/

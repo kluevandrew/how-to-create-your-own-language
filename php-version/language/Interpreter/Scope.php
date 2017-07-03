@@ -6,20 +6,45 @@ namespace Interpreter;
 
 class Scope
 {
+    /**
+     * @var Scope
+     */
+    protected $parent;
+
+    /**
+     * @var array
+     */
     protected $scope = [];
+
+    /**
+     * Scope constructor.
+     *
+     * @param Scope $parent
+     */
+    public function __construct(Scope $parent = null)
+    {
+        $this->parent = $parent;
+    }
 
     public function get($key)
     {
-        return $this->scope[$key];
+        if (array_key_exists($key, $this->scope)) {
+            return $this->scope[$key];
+        }
+
+        if ($this->parent) {
+            return $this->parent->get($key);
+        }
+
+        return null;
     }
 
     public function has($key): bool
     {
-        return isset($this->scope[$key]);
+        return array_key_exists($key, $this->scope) || ($this->parent && $this->parent->has($key));
     }
 
-
-    public function set($key, $value)
+    public function set($key, XValue $value)
     {
         return $this->scope[$key] = $value;
     }
