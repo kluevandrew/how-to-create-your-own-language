@@ -1,4 +1,4 @@
-for (let i = 0; i = i + 1; i < 10) {
+for (let i = 0; i < 10; i = i + 1) {
    print("For cycle index is %s\n", i)
 }
 

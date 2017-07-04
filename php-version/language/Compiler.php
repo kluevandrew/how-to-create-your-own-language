@@ -403,7 +403,15 @@ class Compiler
             );
         }
 
-        throw new \RuntimeException();
+        if ($target instanceof \AST\TypeofExpression) {
+            $this->compileTypeofExpression($target);
+            $this->function->opcode(
+                new Opcode(
+                    Opcode::PUT_FAST,
+                    $this->function->local($target->getName())
+                )
+            );
+        }
     }
 
     protected function compileFunctionStatement(\AST\FunctionStatement $statement)
