@@ -41,6 +41,7 @@ class Interpreter
         Opcode::STORE_ARRAY => 'evalStoreArray',
         Opcode::STORE_MEMBER => 'evalStoreMember',
         Opcode::ARRAY_PUSH => 'evalArrayPush',
+        Opcode::INIT_ARRAY => 'evalInitArray',
     ];
 
     /**
@@ -360,24 +361,32 @@ class Interpreter
 
     public function evalStoreMember()
     {
+        $value = $this->stack->pop();
         $member = $this->stack->pop();
         $owner = $this->stack->pop();
-        $value = $this->stack->pop();
         if (!$owner instanceof \Interpreter\ArrayValue) {
             throw new \RuntimeException();
         }
         $owner->set($member, $value);
+        $this->stack->push($owner);
         $this->cursor++;
     }
 
     public function evalArrayPush()
     {
-        $owner = $this->stack->pop();
         $value = $this->stack->pop();
+        $owner = $this->stack->pop();
         if (!$owner instanceof \Interpreter\ArrayValue) {
             throw new \RuntimeException();
         }
         $owner->push($value);
+        $this->stack->push($owner);
+        $this->cursor++;
+    }
+
+    public function evalInitArray()
+    {
+        $this->stack->push(new \Interpreter\ArrayValue([]));
         $this->cursor++;
     }
 

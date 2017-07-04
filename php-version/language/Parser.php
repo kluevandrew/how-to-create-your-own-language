@@ -371,12 +371,22 @@ class Parser
         $this->assertAndNext(Token::TYPE_OPEN_SQUARE_BRACKET);
 
         $items = [];
+        $keys = [];
         while (true) {
             if ($this->current()->is(Token::TYPE_CLOSE_SQUARE_BRACKET)) {
                 break;
             }
 
-            $items[] = $this->parseExpression();
+            $first = $this->parseExpression();
+            if ($this->current()->is(Token::TYPE_COLON)) {
+                $this->next();
+                $keys[] = $first;
+                $items[] = $this->parseExpression();
+            } else {
+                $keys[] = null;
+                $items[] = $first;
+            }
+
             if ($this->current()->is(Token::TYPE_COMMA)) {
                 $this->next();
             } else {
@@ -386,7 +396,7 @@ class Parser
 
         $this->assertAndNext(Token::TYPE_CLOSE_SQUARE_BRACKET);
 
-        return new \AST\ArrayExpression($items);
+        return new \AST\ArrayExpression($items, $keys);
     }
 
     protected function parseMemberExpression(\AST\ExpressionNode $owner)

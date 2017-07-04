@@ -1,0 +1,7 @@
+let array = [
+    'key': 1,
+    'next': 2,
+    3,
+]
+
+dump(array)

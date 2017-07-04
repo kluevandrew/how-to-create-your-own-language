@@ -31,6 +31,7 @@ class Opcode
     const LOAD_MEMBER = 'LOAD_MEMBER';
     const STORE_MEMBER = 'STORE_MEMBER';
     const ARRAY_PUSH = 'ARRAY_PUSH';
+    const INIT_ARRAY = 'INIT_ARRAY';
 
     protected $type;
 

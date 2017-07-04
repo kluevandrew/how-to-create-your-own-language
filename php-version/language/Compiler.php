@@ -273,14 +273,43 @@ class Compiler
     protected function compileArrayExpression(\AST\ArrayExpression $expression)
     {
         $items = array_reverse($expression->getItems());
-        foreach ($items as $item) {
-            $this->compileExpression($item);
+        $keys = array_reverse($expression->getKeys());
+
+        if (empty(array_filter($keys))) {
+            foreach ($items as $index => $item) {
+                $this->compileExpression($item);
+            }
+
+            $this->function->opcode(new Opcode(
+                Opcode::STORE_ARRAY,
+                count($items)
+            ));
+            return;
         }
 
         $this->function->opcode(new Opcode(
-            Opcode::STORE_ARRAY,
-            count($items)
+            Opcode::INIT_ARRAY
         ));
+
+        foreach ($items as $index => $item) {
+            if ($keys[$index]) {
+                $this->compileExpression($keys[$index]);
+                $this->compileExpression($item);
+                $this->function->opcode(
+                    new Opcode(
+                        Opcode::STORE_MEMBER
+                    )
+                );
+            } else {
+                $this->compileExpression($item);
+                $this->function->opcode(
+                    new Opcode(
+                        Opcode::ARRAY_PUSH
+                    )
+                );
+            }
+        }
+
     }
 
     protected function compileMemberExpression(\AST\MemberExpression $expression)
@@ -339,12 +368,11 @@ class Compiler
 
     protected function compileAssignExpression(\AST\AssignExpression $expression)
     {
-        $this->compileExpression($expression->getValue());
-
         $target = $expression->getTarget();
         if ($target instanceof \AST\MemberExpression) {
             $this->compileExpression($target->getOwner());
             $this->compileExpression($target->getMember());
+            $this->compileExpression($expression->getValue());
             $this->function->opcode(
                 new Opcode(
                     Opcode::STORE_MEMBER
@@ -353,23 +381,26 @@ class Compiler
             return;
         }
 
-        if ($target instanceof \AST\IdentifierExpression) {
-            $this->function->opcode(
-                new Opcode(
-                    Opcode::PUT_FAST,
-                    $this->function->local($target->getName())
-                )
-            );
-        }
-
         if ($target instanceof \AST\PushExpression) {
             $this->compileExpression($target->getOwner());
+            $this->compileExpression($expression->getValue());
+
             $this->function->opcode(
                 new Opcode(
                     Opcode::ARRAY_PUSH
                 )
             );
             return;
+        }
+
+        if ($target instanceof \AST\IdentifierExpression) {
+            $this->compileExpression($expression->getValue());
+            $this->function->opcode(
+                new Opcode(
+                    Opcode::PUT_FAST,
+                    $this->function->local($target->getName())
+                )
+            );
         }
 
         throw new \RuntimeException();
