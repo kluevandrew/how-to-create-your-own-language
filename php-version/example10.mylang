@@ -1,0 +1,9 @@
+let array = [1, 1]
+array[] = array[0] + array[1]
+array[] = array[1] + array[2]
+array[] = array[2] + array[3]
+array[] = array[3] + array[4]
+array[] = [1, 2, 1 + 2]
+
+
+dump(array)

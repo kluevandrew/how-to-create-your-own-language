@@ -18,6 +18,8 @@ class Lexer
         ')' => Token::TYPE_CLOSE_PARENTHESIS,
         '{' => Token::TYPE_CURLY_OPEN,
         '}' => Token::TYPE_CURLY_CLOSE,
+        '[' => Token::TYPE_OPEN_SQUARE_BRACKET,
+        ']' => Token::TYPE_CLOSE_SQUARE_BRACKET,
         '.' => Token::TYPE_DOT,
         ',' => Token::TYPE_COMMA,
         '=' => Token::TYPE_EQUALS,

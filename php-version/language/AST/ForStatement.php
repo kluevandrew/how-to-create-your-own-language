@@ -12,7 +12,7 @@ class ForStatement extends StatementNode
     /**
      * @var ExpressionStatement
      */
-    protected $step;
+    protected $iteration;
 
     /**
      * @var ExpressionStatement
@@ -20,24 +20,25 @@ class ForStatement extends StatementNode
     protected $condition;
 
     /**
+     * ForStatement constructor.
+     *
+     * @param Node                $initial
+     * @param ExpressionStatement $condition
+     * @param ExpressionStatement $iteration
+     * @param array               $statements
+     */
+    public function __construct(Node $initial, ExpressionStatement $condition, ExpressionStatement $iteration, array $statements)
+    {
+        $this->initial    = $initial;
+        $this->iteration  = $iteration;
+        $this->condition  = $condition;
+        $this->statements = $statements;
+    }
+
+    /**
      * @var array
      */
     protected $statements;
-
-    /**
-     * ForStatement constructor.
-     * @param Node $initial
-     * @param ExpressionStatement $step
-     * @param ExpressionStatement $condition
-     * @param array $statements
-     */
-    public function __construct(Node $initial, ExpressionStatement $step, ExpressionStatement $condition, array $statements)
-    {
-        $this->initial = $initial;
-        $this->step = $step;
-        $this->condition = $condition;
-        $this->statements = $statements;
-    }
 
     /**
      * @return AssignStatement
@@ -50,9 +51,9 @@ class ForStatement extends StatementNode
     /**
      * @return ExpressionStatement
      */
-    public function getStep(): ExpressionStatement
+    public function getIteration(): ExpressionStatement
     {
-        return $this->step;
+        return $this->iteration;
     }
 
     /**
@@ -75,7 +76,7 @@ class ForStatement extends StatementNode
     {
         return $this->toString([
             $this->initial,
-            $this->step,
+            $this->iteration,
             $this->condition,
             $this->statements,
         ]);

@@ -25,17 +25,23 @@ class Stack
 
     public function print()
     {
-        echo '[' . implode(', ', array_map(function ($value) {
-            if (is_array($value)) {
-                return '__ARRAY__';
-            }
+        echo '[' . implode(', ', array_map(function (XValue $value) {
+                $value = $value->getValue();
+                if (is_array($value)) {
+                    return '__ARRAY__';
+                }
 
-            if (is_resource($value)) {
-                return '__RESOURCE';
-            }
+                if (is_resource($value)) {
+                    return '__RESOURCE';
+                }
 
-            return is_scalar($value) ? $value : get_class($value);
-        }, $this->stack)) . ']';
+                return is_scalar($value) ? $value : get_class($value);
+            }, $this->stack)) . ']';
+    }
+
+    public function size()
+    {
+        return count($this->stack);
     }
 
 }

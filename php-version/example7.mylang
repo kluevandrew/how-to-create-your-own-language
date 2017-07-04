@@ -1,0 +1,14 @@
+let array = [1, 2, [3, 4, ]]
+
+for (let i = 0; i < 3; i = i + 1) {
+    if (i > 1) {
+        for (let j = 0; j < 2; j = j + 1) {
+            print(array[i][j])
+            print("\n")
+        }
+    } else {
+        print(array[i])
+        print("\n")
+    }
+
+}

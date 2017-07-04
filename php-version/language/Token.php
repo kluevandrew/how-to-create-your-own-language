@@ -56,6 +56,8 @@ class Token
     const TYPE_FUNCTION = 'T_FUNCTION';
     const TYPE_RETURN = 'T_RETURN';
     const TYPE_TYPEOF = 'T_TYPEOF';
+    const TYPE_OPEN_SQUARE_BRACKET = 'T_OPEN_SQUARE_BRACKET';
+    const TYPE_CLOSE_SQUARE_BRACKET = 'T_CLOSE_SQUARE_BRACKET';
 
     protected $type;
 

@@ -30,6 +30,8 @@ class Compiler
         \AST\CallExpression::class => 'compileCallExpression',
         \AST\ParenthesesExpression::class => 'compileParenthesesExpression',
         \AST\StringExpression::class => 'compileStringExpression',
+        \AST\ArrayExpression::class => 'compileArrayExpression',
+        \AST\MemberExpression::class => 'compileMemberExpression',
         \AST\AssignExpression::class => 'compileAssignExpression',
         \AST\ForStatement::class => 'compileForStatement',
         \AST\WhileStatement::class => 'compileWhileStatement',
@@ -157,7 +159,7 @@ class Compiler
         $this->compileNode($statement->getCondition());
 
         $bodyStatements = $statement->getStatements();
-        $bodyStatements[] = $statement->getStep();
+        $bodyStatements[] = $statement->getIteration();
         $bodyStatements[] = $statement->getCondition();
         $body = $this->compileFakeFunction(
             $bodyStatements,
@@ -268,6 +270,29 @@ class Compiler
         ));
     }
 
+    protected function compileArrayExpression(\AST\ArrayExpression $expression)
+    {
+        $items = array_reverse($expression->getItems());
+        foreach ($items as $item) {
+            $this->compileExpression($item);
+        }
+
+        $this->function->opcode(new Opcode(
+            Opcode::STORE_ARRAY,
+            count($items)
+        ));
+    }
+
+    protected function compileMemberExpression(\AST\MemberExpression $expression)
+    {
+        $this->compileExpression($expression->getMember());
+        $this->compileExpression($expression->getOwner());
+
+        $this->function->opcode(new Opcode(
+            Opcode::LOAD_MEMBER
+        ));
+    }
+
     protected function compileIdentifierExpression(\AST\IdentifierExpression $expression)
     {
         if ($this->function->hasLocal($expression->getName())) {
@@ -314,14 +339,40 @@ class Compiler
 
     protected function compileAssignExpression(\AST\AssignExpression $expression)
     {
-        $this->compileExpression($expression->getExpression());
+        $this->compileExpression($expression->getValue());
 
-        $this->function->opcode(
-            new Opcode(
-                Opcode::PUT_FAST,
-                $this->function->local($expression->getName()->getName())
-            )
-        );
+        $target = $expression->getTarget();
+        if ($target instanceof \AST\MemberExpression) {
+            $this->compileExpression($target->getOwner());
+            $this->compileExpression($target->getMember());
+            $this->function->opcode(
+                new Opcode(
+                    Opcode::STORE_MEMBER
+                )
+            );
+            return;
+        }
+
+        if ($target instanceof \AST\IdentifierExpression) {
+            $this->function->opcode(
+                new Opcode(
+                    Opcode::PUT_FAST,
+                    $this->function->local($target->getName())
+                )
+            );
+        }
+
+        if ($target instanceof \AST\PushExpression) {
+            $this->compileExpression($target->getOwner());
+            $this->function->opcode(
+                new Opcode(
+                    Opcode::ARRAY_PUSH
+                )
+            );
+            return;
+        }
+
+        throw new \RuntimeException();
     }
 
     protected function compileFunctionStatement(\AST\FunctionStatement $statement)

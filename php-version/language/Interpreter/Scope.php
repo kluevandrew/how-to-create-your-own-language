@@ -49,4 +49,9 @@ class Scope
         return $this->scope[$key] = $value;
     }
 
+    public function all()
+    {
+        return $this->scope;
+    }
+
 }

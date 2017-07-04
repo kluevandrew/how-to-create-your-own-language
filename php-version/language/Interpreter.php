@@ -13,6 +13,7 @@ class Interpreter
     protected $cursor = 0;
 
     protected static $evaluators = [
+        Opcode::RETURN_VALUE => 'noop',
         Opcode::LOAD_CONST => 'evalLoadConst',
         Opcode::STORE_FAST => 'evalStoreFast',
         Opcode::PUT_FAST => 'evalPutFast',
@@ -36,7 +37,10 @@ class Interpreter
         Opcode::BOOLEAN_OR => 'evalBooleanOr',
         Opcode::MAKE_FUNCTION => 'evalMakeFunction',
         Opcode::TYPEOF => 'evalTypeof',
-        Opcode::RETURN_VALUE => 'noop',
+        Opcode::LOAD_MEMBER => 'evalLoadMember',
+        Opcode::STORE_ARRAY => 'evalStoreArray',
+        Opcode::STORE_MEMBER => 'evalStoreMember',
+        Opcode::ARRAY_PUSH => 'evalArrayPush',
     ];
 
     /**
@@ -329,4 +333,52 @@ class Interpreter
     public function noop() {
         $this->cursor++;
     }
+
+    public function evalLoadMember()
+    {
+        $owner = $this->stack->pop();
+        $member = $this->stack->pop();
+
+        if (!$owner instanceof \Interpreter\ArrayValue) {
+            throw new \RuntimeException();
+        }
+
+        $this->stack->push($owner->get($member));
+        $this->cursor++;
+    }
+
+    public function evalStoreArray(Opcode $opcode)
+    {
+        $items = [];
+        for ($i = 0; $i < $opcode->getValue(); $i++) {
+            $items[] = $this->stack->pop();
+        }
+
+        $this->stack->push(new \Interpreter\ArrayValue($items));
+        $this->cursor++;
+    }
+
+    public function evalStoreMember()
+    {
+        $member = $this->stack->pop();
+        $owner = $this->stack->pop();
+        $value = $this->stack->pop();
+        if (!$owner instanceof \Interpreter\ArrayValue) {
+            throw new \RuntimeException();
+        }
+        $owner->set($member, $value);
+        $this->cursor++;
+    }
+
+    public function evalArrayPush()
+    {
+        $owner = $this->stack->pop();
+        $value = $this->stack->pop();
+        if (!$owner instanceof \Interpreter\ArrayValue) {
+            throw new \RuntimeException();
+        }
+        $owner->push($value);
+        $this->cursor++;
+    }
+
 }

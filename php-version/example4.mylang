@@ -8,9 +8,9 @@ function user_function(max) {
     }
 
     function cycle_for(max) {
-      for (let i = 0; i = i + 1; i < max) {
-           print("For   cycle index is %s\n", i)
-        }
+      for (let i = 0; i < max; i = i + 1) {
+           print("For cycle index is %s\n", i)
+      }
     }
 
     if (max >= 0 && max < 5) {

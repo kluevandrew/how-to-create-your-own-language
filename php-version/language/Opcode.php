@@ -27,6 +27,10 @@ class Opcode
     const MAKE_FUNCTION = 'MAKE_FUNCTION';
     const RETURN_VALUE = 'RETURN_VALUE';
     const TYPEOF = 'TYPEOF';
+    const STORE_ARRAY = 'STORE_ARRAY';
+    const LOAD_MEMBER = 'LOAD_MEMBER';
+    const STORE_MEMBER = 'STORE_MEMBER';
+    const ARRAY_PUSH = 'ARRAY_PUSH';
 
     protected $type;
 

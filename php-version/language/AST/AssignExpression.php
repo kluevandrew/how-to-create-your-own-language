@@ -13,42 +13,43 @@ class AssignExpression extends ExpressionNode
     /**
      * @var IdentifierExpression
      */
-    protected $name;
+    protected $target;
 
     /**
      * @var ExpressionNode
      */
-    protected $expression;
+    protected $value;
 
     /**
      * AssignExpression constructor.
-     * @param IdentifierExpression $name
-     * @param ExpressionNode $expression
+     *
+     * @param ExpressionNode $target
+     * @param ExpressionNode $value
      */
-    public function __construct(IdentifierExpression $name, ExpressionNode $expression)
+    public function __construct(ExpressionNode $target, ExpressionNode $value)
     {
-        $this->name = $name;
-        $this->expression = $expression;
-    }
-
-    /**
-     * @return IdentifierExpression
-     */
-    public function getName(): IdentifierExpression
-    {
-        return $this->name;
+        $this->target = $target;
+        $this->value  = $value;
     }
 
     /**
      * @return ExpressionNode
      */
-    public function getExpression()
+    public function getTarget(): ExpressionNode
     {
-        return $this->expression;
+        return $this->target;
+    }
+
+    /**
+     * @return ExpressionNode
+     */
+    public function getValue()
+    {
+        return $this->value;
     }
 
     public function __toString()
     {
-        return $this->toString([$this->expression]);
+        return $this->toString([$this->value]);
     }
 }

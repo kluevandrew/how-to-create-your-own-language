@@ -28,6 +28,7 @@ require_once __DIR__.'/language/Interpreter/Stack.php';
 require_once __DIR__.'/language/Interpreter/XValue.php';
 require_once __DIR__.'/language/Interpreter/NativeFunction.php';
 require_once __DIR__.'/language/Interpreter/UserFunction.php';
+require_once __DIR__.'/language/Interpreter/ArrayValue.php';
 require_once __DIR__.'/language/Interpreter.php';
 require_once __DIR__.'/language/Lexer.php';
 require_once __DIR__.'/language/Parser.php';
@@ -35,6 +36,9 @@ require_once __DIR__.'/language/Token.php';
 require_once __DIR__.'/language/Opcode.php';
 require_once __DIR__.'/language/FunctionCode.php';
 require_once __DIR__.'/language/AST/TypeofExpression.php';
+require_once __DIR__.'/language/AST/ArrayExpression.php';
+require_once __DIR__.'/language/AST/MemberExpression.php';
+require_once __DIR__.'/language/AST/PushExpression.php';
 
 if (isset($_GET)) {
     $file = $_GET['example'] ?? 0;

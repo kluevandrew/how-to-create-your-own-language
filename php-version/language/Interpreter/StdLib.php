@@ -15,6 +15,7 @@ class StdLib extends Scope
         $this->scope = [
             'print' => new NativeFunction('print', 'printf'),
             'random' =>  new NativeFunction('print', 'random_int', 2),
+            'dump' =>  new NativeFunction('dump', 'var_dump'),
         ];
     }
 
