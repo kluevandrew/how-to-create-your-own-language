@@ -83,7 +83,7 @@ class Lexer
             }
 
             if ($this->isText($char)) {
-                $this->while([$this, 'isText'], Token::TYPE_IDENTIFIER);
+                $this->while([$this, 'isTextOrNumber'], Token::TYPE_IDENTIFIER);
                 continue;
             }
 
@@ -271,7 +271,12 @@ class Lexer
 
     protected function isText($char)
     {
-        return preg_match('/[a-z_]/ui', $char);
+        return preg_match('/\w/ui', $char);
+    }
+
+    protected function isTextOrNumber($char)
+    {
+        return $this->isText($char) || $this->isNumeric($char);
     }
 
     public function __toString()

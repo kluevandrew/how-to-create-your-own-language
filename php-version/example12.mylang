@@ -1,0 +1,6 @@
+let array = []
+
+array['a'] = 1
+array.a1 = 2
+
+dump(array)

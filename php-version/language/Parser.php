@@ -286,7 +286,9 @@ class Parser
                 $result = new AST\CallExpression($callee, $arguments);
                 $this->assertToken(Token::TYPE_CLOSE_PARENTHESIS);
                 $this->next();
-            } elseif ($this->current()->is([Token::TYPE_OPEN_SQUARE_BRACKET, Token::TYPE_DOT])) {
+            } elseif ($this->current()->is(Token::TYPE_OPEN_SQUARE_BRACKET)) {
+                return $this->parseKeyExpression($result);
+            } elseif ($this->current()->is(Token::TYPE_DOT)) {
                 return $this->parseMemberExpression($result);
             } else {
                 break;
@@ -321,7 +323,19 @@ class Parser
             if ($this->lookahead()->is(Token::TYPE_EQUALS)) {
                 return $this->parseAssignExpression();
             }
-            if ($this->lookahead()->is([Token::TYPE_OPEN_SQUARE_BRACKET, Token::TYPE_DOT])) {
+
+            if ($this->lookahead()->is(Token::TYPE_OPEN_SQUARE_BRACKET)) {
+                $result = $this->parseKeyExpression($this->parseIdentifier());
+                if ($this->current()->is(Token::TYPE_EQUALS)) {
+                    $this->next();
+                    $expression = $this->parseExpression();
+                    return new \AST\AssignExpression($result, $expression);
+                }
+
+                return $result;
+            }
+
+            if ($this->lookahead()->is(Token::TYPE_DOT)) {
                 $result = $this->parseMemberExpression($this->parseIdentifier());
                 if ($this->current()->is(Token::TYPE_EQUALS)) {
                     $this->next();
@@ -331,6 +345,7 @@ class Parser
 
                 return $result;
             }
+
             return $this->parseIdentifier();
         }  elseif ($this->current()->is(Token::TYPE_OPEN_PARENTHESIS)) {
             return $this->parseParentheses();
@@ -401,11 +416,32 @@ class Parser
 
     protected function parseMemberExpression(\AST\ExpressionNode $owner)
     {
-        $this->assertToken([Token::TYPE_OPEN_SQUARE_BRACKET, Token::TYPE_DOT]);
-        $square = $this->current()->is(Token::TYPE_OPEN_SQUARE_BRACKET);
+        $this->assertAndNext(Token::TYPE_DOT);
+
+        $this->assertToken(Token::TYPE_IDENTIFIER);
+
+        $value = $this->current()->getValue();
         $this->next();
 
-        if ($square && $this->current()->is(Token::TYPE_CLOSE_SQUARE_BRACKET)) {
+        $name = new \AST\StringExpression($value, '\'');
+        $result = new \AST\MemberExpression($owner, $name);
+
+        if ($this->current()->is(Token::TYPE_OPEN_SQUARE_BRACKET)) {
+            return $this->parseKeyExpression($result);
+        }
+
+        if ($this->current()->is(Token::TYPE_DOT)) {
+            return $this->parseMemberExpression($result);
+        }
+
+        return $result;
+    }
+
+    protected function parseKeyExpression(\AST\ExpressionNode $owner)
+    {
+        $this->assertAndNext(Token::TYPE_OPEN_SQUARE_BRACKET);
+
+        if ($this->current()->is(Token::TYPE_CLOSE_SQUARE_BRACKET)) {
             $this->next();
             $this->assertToken(Token::TYPE_EQUALS);
             return new \AST\PushExpression($owner);
@@ -413,13 +449,15 @@ class Parser
 
         $name = $this->parseExpression();
 
-        if ($square) {
-            $this->assertAndNext(Token::TYPE_CLOSE_SQUARE_BRACKET);
-        }
+        $this->assertAndNext(Token::TYPE_CLOSE_SQUARE_BRACKET);
 
         $result = new \AST\MemberExpression($owner, $name);
 
-        if ($this->current()->is([Token::TYPE_OPEN_SQUARE_BRACKET, Token::TYPE_DOT])) {
+        if ($this->current()->is(Token::TYPE_OPEN_SQUARE_BRACKET)) {
+            return $this->parseKeyExpression($result);
+        }
+
+        if ($this->current()->is(Token::TYPE_DOT)) {
             return $this->parseMemberExpression($result);
         }
 
