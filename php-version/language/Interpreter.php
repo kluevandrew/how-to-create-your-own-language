@@ -87,7 +87,10 @@ class Interpreter
             $this->{$evaluator}($opcode);
         }
 
-        $last = $this->stack->pop();
+        $last = null;
+        if ($this->stack->size() > 0) {
+            $last = $this->stack->pop();
+        }
 
         return $last instanceof \Interpreter\XValue ? $last->getValue() : 0;
     }

@@ -40,43 +40,42 @@ require_once __DIR__.'/language/AST/ArrayExpression.php';
 require_once __DIR__.'/language/AST/MemberExpression.php';
 require_once __DIR__.'/language/AST/PushExpression.php';
 
-if (isset($_GET)) {
+if (!empty($_GET)) {
     $file = $_GET['example'] ?? 0;
 } else {
     $file = $argv[1] ?? 0;
 }
 
 $sourceCode = file_get_contents(__DIR__.'/example'.$file.'.mylang');
-
 $lexer = new Lexer();
 $parser = new Parser();
 $compiler = new Compiler();
 $interpreter = new Interpreter();
 
-echo '<pre>';
-echo $sourceCode;
-echo '</pre>';
-echo '<hr>';
+//echo '<pre>';
+//echo $sourceCode;
+//echo '</pre>';
+//echo '<hr>';
 
-echo '<pre>';
+//echo '<pre>';
 $tokens = $lexer->tokenize($sourceCode);
-echo htmlspecialchars($lexer);
-echo '</pre>';
-echo '<hr>';
+//echo htmlspecialchars($lexer);
+//echo '</pre>';
+//echo '<hr>';
 
-echo '<pre>';
+//echo '<pre>';
 $ast = $parser->parse($tokens);
-var_export($ast);
-echo '</pre>';
-echo '<hr>';
+//var_export($ast);
+//echo '</pre>';
+//echo '<hr>';
 
-echo '<pre>';
+//echo '<pre>';
 $app = $compiler->compile($ast);
-var_export($app);
-echo '</pre>';
-echo '<hr>';
+//var_export($app);
+//echo '</pre>';
+//echo '<hr>';
 
-echo '<pre>';
+//echo '<pre>';
 $code = ($interpreter->run($app));
-echo '</pre>';
-exit($code);
+//echo '</pre>';
+//exit($code);
